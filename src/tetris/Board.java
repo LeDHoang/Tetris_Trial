@@ -10,6 +10,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.image.BufferedImage;
 import java.util.Random;
 
 import javax.swing.JPanel;
@@ -19,6 +20,7 @@ public class Board extends JPanel implements KeyListener, MouseListener, MouseMo
 
    	//board dimensions (the playing area)
     private final int boardHeight = 20, boardWidth = 10;
+    private BufferedImage pause, refresh;
 
 	// block size
     public static final int blockSize = 30;
@@ -31,6 +33,7 @@ public class Board extends JPanel implements KeyListener, MouseListener, MouseMo
 
 	// currentShape
     private static Shape currentShape, nextShape;
+    private boolean gamePaused = false;
 
 	// game loop
     private Timer looper;
@@ -173,7 +176,9 @@ public class Board extends JPanel implements KeyListener, MouseListener, MouseMo
 
     @Override
     public void keyPressed(KeyEvent e) {
-
+        if (e.getKeyCode() == KeyEvent.VK_UP) {
+            currentShape.rotateShape();
+        }
         if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
             currentShape.setDeltaX(1);
         }

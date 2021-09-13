@@ -149,6 +149,54 @@ public class Shape {
             }
         }
     }
+    public void rotateShape() {
+
+        int[][] rotatedShape = null;
+
+        rotatedShape = transposeMatrix(coords);
+
+        rotatedShape = reverseRows(rotatedShape);
+
+        if ((x + rotatedShape[0].length > 10) || (y + rotatedShape.length > 20)) {
+            return;
+        }
+
+        for (int row = 0; row < rotatedShape.length; row++) {
+            for (int col = 0; col < rotatedShape[row].length; col++) {
+                if (rotatedShape[row][col] != 0) {
+                    if (board.getBoard()[y + row][x + col] != null) {
+                        return;
+                    }
+                }
+            }
+        }
+        coords = rotatedShape;
+    }
+
+    private int[][] transposeMatrix(int[][] matrix) {
+        int[][] temp = new int[matrix[0].length][matrix.length];
+        for (int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[0].length; j++) {
+                temp[j][i] = matrix[i][j];
+            }
+        }
+        return temp;
+    }
+
+    private int[][] reverseRows(int[][] matrix) {
+
+        int middle = matrix.length / 2;
+
+        for (int i = 0; i < middle; i++) {
+            int[] temp = matrix[i];
+
+            matrix[i] = matrix[matrix.length - i - 1];
+            matrix[matrix.length - i - 1] = temp;
+        }
+
+        return matrix;
+
+    }
 
 
 
