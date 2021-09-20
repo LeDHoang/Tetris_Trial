@@ -1,8 +1,6 @@
 package tetris;
 
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.Graphics;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -19,39 +17,41 @@ import javax.swing.Timer;
 public class Board extends JPanel implements KeyListener, MouseListener, MouseMotionListener {
 
    	//board dimensions (the playing area)
+    private int Level = 1;
+
     private final int boardHeight = 20, boardWidth = 10;
-    private BufferedImage pause, refresh;
+    private final BufferedImage pause;
+    private final BufferedImage refresh;
 
 	// block size
     public static final int blockSize = 30;
 
 	// field
-    private Color[][] board = new Color[boardHeight][boardWidth];
+    private final Color[][] board = new Color[boardHeight][boardWidth];
 
 	// array with all the possible shapes
-    private Shape[] shapes = new Shape[7];
+    private final Shape[] shapes = new Shape[7];
 
 	// currentShape
     private static Shape currentShape, nextShape;
     private boolean gamePaused = false;
-
+    private boolean gameOver = false;
+    private boolean HardMode = false;
 	// game loop
-    private Timer looper;
+    private final Timer looper;
 
-    private int FPS = 60;
-
-    private int delay = 1000 / FPS;
-
-	// mouse events variables
+    // mouse events variables
     private int mouseX, mouseY;
 
     private boolean leftClick = false;
+    private final Rectangle stopBounds;
+    private final Rectangle refreshBounds;
 
-    private Color[] colors = {Color.decode("#ed1c24"), Color.decode("#ff7f27"), Color.decode("#fff200"), 
+    private final Color[] colors = {Color.decode("#ed1c24"), Color.decode("#ff7f27"), Color.decode("#fff200"),
         Color.decode("#22b14c"), Color.decode("#00a2e8"), Color.decode("#a349a4"), Color.decode("#3f48cc")};
-    private Random random = new Random();
+    private final Random random = new Random();
 	// buttons press lapse
-    private Timer buttonLapse = new Timer(300, new ActionListener() {
+    private final Timer buttonLapse = new Timer(300, new ActionListener() {
 
         @Override
         public void actionPerformed(ActionEvent e) {
@@ -63,13 +63,19 @@ public class Board extends JPanel implements KeyListener, MouseListener, MouseMo
     private int score = 0;
 
     public Board() {
-
+        pause = ImageLoader.loadImage("/pause.png");
+        refresh = ImageLoader.loadImage("/refresh.png");
 
         mouseX = 0;
         mouseY = 0;
 
+        stopBounds = new Rectangle(350, 500, pause.getWidth(), pause.getHeight() + pause.getHeight() / 2);
+        refreshBounds = new Rectangle(350, 500 - refresh.getHeight() - 20, refresh.getWidth(),
+                refresh.getHeight() + refresh.getHeight() / 2);
 
 		// create game looper
+        int FPS = 60;
+        int delay = 1000 / FPS;
         looper = new Timer(delay, new GameLooper());
 
 		// create shapes
@@ -110,7 +116,31 @@ public class Board extends JPanel implements KeyListener, MouseListener, MouseMo
     }
 
     private void update() {
+        if (stopBounds.contains(mouseX, mouseY) && leftClick && !buttonLapse.isRunning() && !gameOver) {
+            buttonLapse.start();
+            gamePaused = !gamePaused;
+        }
 
+        if (refreshBounds.contains(mouseX, mouseY) && leftClick) {
+            startGame();
+        }
+        if (score == 10){
+            Level=2;
+            HardMode = true;
+        }
+        if (score == 20){
+            Level=3;
+            HardMode = true;
+        }
+        if(score==11 || score == 21){
+            HardMode = false;
+        }
+
+
+
+        if (gamePaused || gameOver) {
+            return;
+        }
         currentShape.update();
     }
 
@@ -139,11 +169,44 @@ public class Board extends JPanel implements KeyListener, MouseListener, MouseMo
             }
         }
         currentShape.render(g);
+        if (stopBounds.contains(mouseX, mouseY)) {
+            g.drawImage(pause.getScaledInstance(pause.getWidth() + 3, pause.getHeight() + 3, BufferedImage.SCALE_DEFAULT), stopBounds.x + 3, stopBounds.y + 3, null);
+        } else {
+            g.drawImage(pause, stopBounds.x, stopBounds.y, null);
+        }
+
+        if (refreshBounds.contains(mouseX, mouseY)) {
+            g.drawImage(refresh.getScaledInstance(refresh.getWidth() + 3, refresh.getHeight() + 3,
+                    BufferedImage.SCALE_DEFAULT), refreshBounds.x + 3, refreshBounds.y + 3, null);
+        } else {
+            g.drawImage(refresh, refreshBounds.x, refreshBounds.y, null);
+        }
+
+        if (gamePaused) {
+            String gamePausedString = "GAME PAUSED";
+            g.setColor(Color.WHITE);
+            g.setFont(new Font("Georgia", Font.BOLD, 30));
+            g.drawString(gamePausedString, 35, WindowGame.HEIGHT / 2);
+        }
+        if (gameOver) {
+            String gameOverString = "GAME OVER";
+            g.setColor(Color.WHITE);
+            g.setFont(new Font("Georgia", Font.BOLD, 30));
+            g.drawString(gameOverString, 50, WindowGame.HEIGHT / 2);
+        }
+        if (HardMode) {
+            String gameOverString = "KEEP GOING";
+            g.setColor(Color.WHITE);
+            g.setFont(new Font("Georgia", Font.BOLD, 25));
+            g.drawString(gameOverString, 30, WindowGame.HEIGHT / 2);
+        }
+
 
         g.setColor(Color.WHITE);
 
         g.setFont(new Font("Georgia", Font.BOLD, 20));
-
+        g.drawString("LEVEL", WindowGame.WIDTH - 125, WindowGame.HEIGHT / 2-100);
+        g.drawString("# " + Level + "", WindowGame.WIDTH - 125, WindowGame.HEIGHT / 2 - 70);
         g.drawString("SCORE", WindowGame.WIDTH - 125, WindowGame.HEIGHT / 2);
         g.drawString(score + "", WindowGame.WIDTH - 125, WindowGame.HEIGHT / 2 + 30);
 
@@ -167,7 +230,15 @@ public class Board extends JPanel implements KeyListener, MouseListener, MouseMo
         currentShape = nextShape;
         setNextShape();
 
-
+        for (int row = 0; row < currentShape.getCoords().length; row++) {
+            for (int col = 0; col < currentShape.getCoords()[0].length; col++) {
+                if (currentShape.getCoords()[row][col] != 0) {
+                    if (board[currentShape.getY() + row][currentShape.getX() + col] != null) {
+                        gameOver = true;
+                    }
+                }
+            }
+        }
     }
 
     public Color[][] getBoard() {
@@ -193,7 +264,15 @@ public class Board extends JPanel implements KeyListener, MouseListener, MouseMo
     @Override
     public void keyReleased(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_DOWN) {
-            currentShape.speedDown();
+            if(score<=10) {
+                currentShape.speedDown();
+            }
+            if(score >10 && score <=20){
+                currentShape.speedDown2();
+            }
+            if(score >20){
+                currentShape.speedDown3();
+            }
         }
     }
 
@@ -206,6 +285,7 @@ public class Board extends JPanel implements KeyListener, MouseListener, MouseMo
         stopGame();
         setNextShape();
         setCurrentShape();
+        gameOver = false;
         looper.start();
 
     }

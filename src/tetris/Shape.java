@@ -12,6 +12,7 @@ public class Shape {
     private long time, lastTime;
 
     private int normal = 600, fast = 50;
+    private int normal2 = 400, normal3 = 200;
 
     private int delay;
 
@@ -26,6 +27,7 @@ public class Shape {
     private boolean collision = false, moveX = false;
 
     private int timePassedFromCollision = -1;
+    private int scoretime;
 
     public Shape(int[][] coords, Board board, Color color) {
         this.coords = coords;
@@ -61,6 +63,7 @@ public class Shape {
             }
             checkLine();
             board.addScore();
+            scoretime++;
             board.setCurrentShape();
             timePassedFromCollision = -1;
         }
@@ -214,6 +217,12 @@ public class Shape {
 
     public void speedDown() {
         delay = normal;
+    }
+    public void speedDown2() {
+        delay = normal2;
+    }
+    public void speedDown3() {
+        delay = normal3;
     }
 
     public int[][] getCoords() {
